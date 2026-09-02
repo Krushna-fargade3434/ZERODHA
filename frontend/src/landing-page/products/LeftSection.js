@@ -4,7 +4,6 @@ function LeftSection({
   imageURL,
   productName,
   productDescription,
-  tryDemo,
   learnMore,
   googlePlay,
   appStore,
@@ -20,7 +19,6 @@ function LeftSection({
             <h3 className="text-muted">{productName}</h3>
             <p className="text-muted">{productDescription}</p>
             <div>
-                <a href={tryDemo} style={{textDecoration:"none"}}>Try Demo</a>
                 <a href={learnMore} style={{marginLeft:"50px", textDecoration:"none"}}>Learn More</a>
             </div>
             <div className="mt-3">
