@@ -57,6 +57,42 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+let databaseConnection;
+const connectToDatabase = () => {
+  if (mongoose.connection.readyState === 1) {
+    return Promise.resolve();
+  }
+  if (!databaseConnection) {
+    databaseConnection = mongoose.connect(url, {
+      serverSelectionTimeoutMS: 10000,
+    }).catch((error) => {
+      databaseConnection = undefined;
+      throw error;
+    });
+  }
+  return databaseConnection;
+};
+
+app.get("/health", async (req, res) => {
+  try {
+    await connectToDatabase();
+    return res.json({ status: "ok", database: "connected" });
+  } catch (error) {
+    console.error("Database health check failed:", error.message);
+    return res.status(503).json({ status: "error", database: "disconnected" });
+  }
+});
+
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    res.status(503).json({ message: "Database unavailable" });
+  }
+});
+
 const createToken = (userId) =>
   jwt.sign({ sub: userId.toString() }, JWT_SECRET, { expiresIn: "1d" });
 
@@ -132,20 +168,6 @@ app.post("/auth/logout", (req, res) => {
 
   res.status(204).send();
 });
-
-app.get("/health", (req, res) => {
-  const databaseReady = mongoose.connection.readyState === 1;
-  res.status(databaseReady ? 200 : 503).json({
-    status: databaseReady ? "ok" : "starting",
-    database: databaseReady ? "connected" : "disconnected",
-  });
-});
-
-mongoose.connect(url)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-  });
 
 // app.get('/addHoldings' , async(req,res)=>{
 //     let tempHoldings = [
