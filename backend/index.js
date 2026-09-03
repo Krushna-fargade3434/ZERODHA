@@ -17,19 +17,27 @@ const { authCookieName, requireAuth } = require("./middleware/auth");
 const PORT = process.env.PORT || 3002;
 const url = process.env.MONGO_URL;
 const JWT_SECRET = process.env.JWT_SECRET;
-const allowedOrigins = (
-  process.env.FRONTEND_ORIGIN || "http://localhost:3000,http://localhost:3005,http://localhost:5173"
-).split(",");
+const cookieSameSite = process.env.COOKIE_SAME_SITE || (
+  process.env.NODE_ENV === "production" ? "none" : "lax"
+);
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is required in backend/.env");
+}
+if (!url) {
+  throw new Error("MONGO_URL is required in backend/.env");
 }
 
 const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const developmentRequest = process.env.NODE_ENV !== "production" && allowedOrigins.length === 0;
+    if (!origin || allowedOrigins.includes(origin) || developmentRequest) {
       return callback(null, true);
     }
     return callback(new Error("Origin is not allowed by CORS"));
@@ -44,7 +52,7 @@ const createToken = (userId) =>
 
 const sessionCookieOptions = {
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: cookieSameSite,
   secure: process.env.NODE_ENV === "production",
   maxAge: 24 * 60 * 60 * 1000,
 };
@@ -108,8 +116,16 @@ app.get("/auth/me", requireAuth, (req, res) => {
 app.post("/auth/logout", (req, res) => {
   res.clearCookie(authCookieName, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: cookieSameSite,
     secure: process.env.NODE_ENV === "production",
+  });
+
+  app.get("/health", (req, res) => {
+    const databaseReady = mongoose.connection.readyState === 1;
+    res.status(databaseReady ? 200 : 503).json({
+      status: databaseReady ? "ok" : "starting",
+      database: databaseReady ? "connected" : "disconnected",
+    });
   });
   res.status(204).send();
 });
@@ -246,10 +262,12 @@ mongoose.connect(url)
 //     res.send("Done")
 // })
 
-app.get("/allHodings", requireAuth, async(req,res) =>{
+const getHoldings = async(req,res) =>{
   let allHoldings = await HoldingsModel.find({});
   res.json(allHoldings);
-})
+};
+app.get("/allHoldings", requireAuth, getHoldings);
+app.get("/allHodings", requireAuth, getHoldings);
 app.get("/allPositions", requireAuth, async(req,res) =>{
   let allPositions = await PositionsModel.find({});
   res.json(allPositions);
@@ -262,7 +280,7 @@ app.post('/newOrder' , requireAuth, async(req,res) => {
     price: req.body.price,
     mode: req.body.mode,
   });
-  newOrder.save();
+  await newOrder.save();
   res.send("order saved")
 })
 

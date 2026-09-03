@@ -13,20 +13,25 @@ import SupportPage from './landing-page/support/SupportPage.js';
 import Navbar from './landing-page/Navbar.js'
 import Footer from './landing-page/Footer.js'
 import NotFound from './landing-page/NotFound.js'
+import Login from './auth/Login.js'
+import { AuthProvider } from './auth/AuthContext.js'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <BrowserRouter>
-  <Navbar />
-    <Routes>
+  <AuthProvider>
+    <Navbar />
+      <Routes>
       <Route path="/" element={<HomePage/>}></Route>
       <Route path="/signup" element={<Signup/>}></Route>
+      <Route path="/login" element={<Login/>}></Route>
       <Route path="/about" element={<AboutPage />}></Route>
       <Route path="/product" element={<ProductsPage />}></Route>
       <Route path="/pricing" element={<PricingPage />}></Route>
       <Route path="/support" element={<SupportPage />}></Route>
       <Route path="*" element={<NotFound />}></Route>
-    </Routes>
+      </Routes>
     <Footer />
+  </AuthProvider>
   </BrowserRouter>
 );

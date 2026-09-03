@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "./AuthForm.css";
+import { DASHBOARD_URL } from "../config";
 
 function Login() {
   const { login } = useAuth();
@@ -15,7 +16,7 @@ function Login() {
     setSubmitting(true);
     try {
       await login(form.email, form.password);
-      window.location.href = "http://localhost:5173";
+      window.location.assign(DASHBOARD_URL);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to log in");
     } finally {

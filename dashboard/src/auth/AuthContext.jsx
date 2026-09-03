@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002";
+import { API_URL, FRONTEND_URL } from "../config";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -39,7 +38,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
     setUser(null);
-    window.location.href = "http://localhost:3000/login";
+    window.location.assign(`${FRONTEND_URL}/login`);
   };
 
   const value = useMemo(

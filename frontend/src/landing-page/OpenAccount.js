@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 function OpenAccount() {
     return (
@@ -6,7 +7,7 @@ function OpenAccount() {
             <div className='row text-center'>
                 <h1 className='mt-5'>Open a Zerodha account</h1>
                 <p>Modern platforms and apps, <i className="fa-solid fa-indian-rupee-sign"></i>0 investments, and flat <i className="fa-solid fa-indian-rupee-sign"></i>20 intraday and F&O trades.</p>
-                <button className='p-2 btn btn-primary fs-5 mb-5' style={{width:"20%", margin:"0 auto"}}>Sign up now</button>
+                <Link className='p-2 btn btn-primary fs-5 mb-5' style={{width:"20%", margin:"0 auto"}} to="/signup">Sign up now</Link>
             </div>
 
         </div>

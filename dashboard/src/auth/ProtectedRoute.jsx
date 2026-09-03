@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "./AuthContext";
+import { FRONTEND_URL } from "../config";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -9,7 +10,10 @@ function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    window.location.href = "http://localhost:3000/login";
+    const loginUrl = `${FRONTEND_URL}/login`;
+    if (window.location.href !== loginUrl) {
+      window.location.replace(loginUrl);
+    }
     return null;
   }
 
