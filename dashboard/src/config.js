@@ -1,6 +1,12 @@
 const trimTrailingSlash = (value) => value.replace(/\/+$/, "");
 
-export const API_URL = trimTrailingSlash(import.meta.env.VITE_API_URL || "/api");
-export const FRONTEND_URL = trimTrailingSlash(
-  import.meta.env.VITE_FRONTEND_URL || window.location.origin
-);
+const requiredUrl = (name) => {
+  const value = import.meta.env[name];
+  if (!value) {
+    throw new Error(`${name} must be configured for this deployment`);
+  }
+  return trimTrailingSlash(value);
+};
+
+export const API_URL = requiredUrl("VITE_API_URL");
+export const FRONTEND_URL = requiredUrl("VITE_FRONTEND_URL");

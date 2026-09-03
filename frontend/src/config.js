@@ -1,13 +1,13 @@
 const trimTrailingSlash = (value) => value.replace(/\/+$/, "");
 
-export const API_URL = trimTrailingSlash(
-  process.env.REACT_APP_API_URL || "/api"
-);
+const requiredUrl = (name) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} must be configured for this deployment`);
+  }
+  return trimTrailingSlash(value);
+};
 
-export const DASHBOARD_URL = trimTrailingSlash(
-  process.env.REACT_APP_DASHBOARD_URL || window.location.origin
-);
-
-export const FRONTEND_URL = trimTrailingSlash(
-  process.env.REACT_APP_FRONTEND_URL || window.location.origin
-);
+export const API_URL = requiredUrl("REACT_APP_API_URL");
+export const DASHBOARD_URL = requiredUrl("REACT_APP_DASHBOARD_URL");
+export const FRONTEND_URL = requiredUrl("REACT_APP_FRONTEND_URL");

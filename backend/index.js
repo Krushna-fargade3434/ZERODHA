@@ -12,6 +12,7 @@ const { HoldingsModel } = require("./models/HoldingsModel");
 const { PositionsModel } = require("./models/PositionsModel");
 const { OrdersModel } = require("./models/OrdersModel");
 const { UserModel } = require("./models/UserModel");
+const { WatchlistModel } = require("./models/WatchlistModel");
 const { authCookieName, requireAuth } = require("./middleware/auth");
 
 const PORT = process.env.PORT || 3002;
@@ -120,14 +121,15 @@ app.post("/auth/logout", (req, res) => {
     secure: process.env.NODE_ENV === "production",
   });
 
-  app.get("/health", (req, res) => {
-    const databaseReady = mongoose.connection.readyState === 1;
-    res.status(databaseReady ? 200 : 503).json({
-      status: databaseReady ? "ok" : "starting",
-      database: databaseReady ? "connected" : "disconnected",
-    });
-  });
   res.status(204).send();
+});
+
+app.get("/health", (req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? "ok" : "starting",
+    database: databaseReady ? "connected" : "disconnected",
+  });
 });
 
 mongoose.connect(url)
@@ -273,6 +275,35 @@ app.get("/allPositions", requireAuth, async(req,res) =>{
   res.json(allPositions);
 })
 
+app.get("/watchlist", requireAuth, async (req, res) => {
+  const items = await WatchlistModel.find({ userId: req.user._id }).sort({ createdAt: 1 });
+  res.json(items);
+});
+
+app.post("/watchlist", requireAuth, async (req, res) => {
+  const { name, price, percent, isDown } = req.body;
+  if (!name || typeof price !== "number" || !percent) {
+    return res.status(400).json({ message: "name, price, and percent are required" });
+  }
+  try {
+    const item = await WatchlistModel.create({
+      userId: req.user._id, name, price, percent, isDown: Boolean(isDown),
+    });
+    return res.status(201).json(item);
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: "Stock is already in your watchlist" });
+    throw error;
+  }
+});
+
+app.delete("/watchlist/:name", requireAuth, async (req, res) => {
+  await WatchlistModel.deleteOne({
+    userId: req.user._id,
+    name: req.params.name.toUpperCase(),
+  });
+  res.status(204).send();
+});
+
 app.post('/newOrder' , requireAuth, async(req,res) => {
   let newOrder = new OrdersModel({
     name: req.body.name,
@@ -284,6 +315,10 @@ app.post('/newOrder' , requireAuth, async(req,res) => {
   res.send("order saved")
 })
 
-app.listen(PORT , () =>{
-    console.log("app started!");
-} );
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`app started on port ${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -1,18 +1,52 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import axios from "axios";
 
 import {Tooltip , Grow } from "@mui/material"
 import {watchlist} from "../data/data";
 import { BarChartOutlined, KeyboardArrowDown , KeyboardArrowUp, MoreHoriz } from "@mui/icons-material";
 import GeneralContext from "./GeneralContext";
 import { DoughnetChart } from "./DoughnetChart.jsx";
+import { API_URL } from "../config";
 
 const WatchList = () => {
+    const [items, setItems] = useState(watchlist);
+    const [symbol, setSymbol] = useState("");
+    const [error, setError] = useState("");
+    useEffect(() => {
+        axios.get(`${API_URL}/watchlist`, { withCredentials: true })
+            .then(({ data }) => setItems(data.length ? data : watchlist))
+            .catch(() => setError("Unable to load watchlist"));
+    }, []);
+    const addStock = async (event) => {
+        event.preventDefault();
+        const item = watchlist.find((stock) => stock.name === symbol.trim().toUpperCase());
+        if (!item) return setError("Choose a supported stock symbol");
+        if (items.some((stock) => stock.name === item.name)) {
+            return setError("Stock is already in your watchlist");
+        }
+        try {
+            const { data } = await axios.post(`${API_URL}/watchlist`, item, { withCredentials: true });
+            setItems((current) => [...current, data]);
+            setSymbol("");
+            setError("");
+        } catch (requestError) {
+            setError(requestError.response?.data?.message || "Unable to add stock");
+        }
+    };
+    const removeStock = async (name) => {
+        try {
+            await axios.delete(`${API_URL}/watchlist/${name}`, { withCredentials: true });
+            setItems((current) => current.filter((stock) => stock.name !== name));
+        } catch (requestError) {
+            setError(requestError.response?.data?.message || "Unable to remove stock");
+        }
+    };
     const data = {
-        labels: watchlist.map((stock) => stock.name),
+        labels: items.map((stock) => stock.name),
         datasets:[
             {
             label:"Price",
-            data: watchlist.map((stock) => stock.price),
+            data: items.map((stock) => stock.price),
             backgroundColor: [
             'rgba(255, 99, 132, 0.5)',
             'rgba(54, 162, 235, 0.5)',
@@ -42,13 +76,19 @@ const WatchList = () => {
                     placeholder="Search eg:infy , bse , nifty"
                     className="search"
                 />
-                <span className="counts">{watchlist.length} / 50</span>
+                <span className="counts">{items.length} / 50</span>
             </div>
+            <form onSubmit={addStock} className="search-container">
+                <input value={symbol} onChange={(event) => setSymbol(event.target.value)}
+                    placeholder="Add symbol (e.g. INFY)" className="search" />
+                <button type="submit">Add</button>
+            </form>
+            {error && <p className="error">{error}</p>}
 
             <ul className="list">
-                {watchlist.map((stock , index) =>{
+                {items.map((stock , index) =>{
                     return (
-                        <WatchListItem stock={stock} key={index} />
+                        <WatchListItem stock={stock} key={index} onRemove={removeStock} />
                     ) 
                 })}
             </ul>
@@ -59,7 +99,7 @@ const WatchList = () => {
 
 export default WatchList;
 
-const WatchListItem = ({stock}) =>{
+const WatchListItem = ({stock, onRemove}) =>{
     const [showWatchlistActions , setShoWatchlistActions ] = useState(false);
 
     const handleMouseEnter = (e) =>{
@@ -84,12 +124,12 @@ const WatchListItem = ({stock}) =>{
                     <span className="price">{stock.price}</span>
                 </div>
             </div>
-            {showWatchlistActions && <WatchListActions uid={stock.name}/>}
+            {showWatchlistActions && <WatchListActions uid={stock.name} onRemove={onRemove}/>}
         </li>
     );
 };
 
-const WatchListActions = ({uid}) =>{
+const WatchListActions = ({uid, onRemove}) =>{
     const ctx = useContext(GeneralContext);
 
     return (
@@ -100,6 +140,9 @@ const WatchListActions = ({uid}) =>{
                     >
                     <button className="buy" onClick={() => ctx.openBuyWindow(uid)}>Buy</button>
                 </Tooltip>
+                <button className="action" onClick={() => onRemove(uid)} aria-label={`Remove ${uid}`}>
+                    Remove
+                </button>
                 <Tooltip
                     title = "Sell (S)" placement="top" arrow TransitionComponent={Grow}
                     >
