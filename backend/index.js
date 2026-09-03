@@ -36,6 +36,14 @@ if (!url) {
 
 const app = express();
 
+// Netlify may forward the public /api prefix to the function unchanged.
+app.use((req, res, next) => {
+  if (req.url === "/api" || req.url.startsWith("/api/")) {
+    req.url = req.url.slice(4) || "/";
+  }
+  next();
+});
+
 app.use(cors({
   origin: (origin, callback) => {
     const developmentRequest = process.env.NODE_ENV !== "production" && allowedOrigins.length === 0;
