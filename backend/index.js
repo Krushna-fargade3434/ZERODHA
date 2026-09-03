@@ -21,7 +21,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const cookieSameSite = process.env.COOKIE_SAME_SITE || (
   process.env.NODE_ENV === "production" ? "none" : "lax"
 );
-const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
+const allowedOrigins = (process.env.FRONTEND_ORIGIN ||
+  "https://zerodha-frontend34.netlify.app,https://zerodha-dasbhaord34.vercel.app")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

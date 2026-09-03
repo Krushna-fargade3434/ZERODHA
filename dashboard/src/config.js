@@ -1,12 +1,13 @@
 const trimTrailingSlash = (value) => value.replace(/\/+$/, "");
 
-const requiredUrl = (name) => {
-  const value = import.meta.env[name];
-  if (!value) {
-    throw new Error(`${name} must be configured for this deployment`);
-  }
-  return trimTrailingSlash(value);
-};
+const configuredUrl = (name, fallback) =>
+  trimTrailingSlash(import.meta.env[name] || fallback);
 
-export const API_URL = requiredUrl("VITE_API_URL");
-export const FRONTEND_URL = requiredUrl("VITE_FRONTEND_URL");
+export const API_URL = configuredUrl(
+  "VITE_API_URL",
+  "https://zerodha-backend34.netlify.app/api"
+);
+export const FRONTEND_URL = configuredUrl(
+  "VITE_FRONTEND_URL",
+  "https://zerodha-frontend34.netlify.app"
+);
